@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BlackBearApi.Model;
+using BlackBearsApi.Repositories;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
 
-namespace WebApplication1
+namespace BlackBearApi
 {
     public class Startup
     {
@@ -24,6 +26,14 @@ namespace WebApplication1
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton(typeof(IDbCollectionRepository<Bear>), typeof(DbCollectionRepository<Bear>));
+            services.AddSingleton(typeof(IDbCollectionRepository<Food>), typeof(DbCollectionRepository<Food>));
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll",
+                    builder => builder.WithOrigins("*").AllowAnyHeader().AllowAnyMethod());
+            });
+
             services.AddMvc();
 
             services.AddSwaggerGen(c => 
@@ -35,6 +45,8 @@ namespace WebApplication1
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            app.UseCors("AllowAll");
+
             app.UseSwagger();
 
             app.UseSwaggerUI(c => 

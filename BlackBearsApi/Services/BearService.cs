@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using WebApplication1.Model;
+using BlackBearApi.Model;
 
-namespace WebApplication1.Services
+namespace BlackBearApi.Services
 {
     public class BearService
     {

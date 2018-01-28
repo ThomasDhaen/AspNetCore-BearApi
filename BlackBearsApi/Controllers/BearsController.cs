@@ -3,25 +3,40 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Model;
-using WebApplication1.Services;
+using Microsoft.AspNetCore.Cors;
+using BlackBearApi.Model;
+using BlackBearApi.Services;
+using BlackBearsApi.Repositories;
 
-namespace WebApplication1.Controllers
+namespace BlackBearApi.Controllers
 {
     [Route("api/[controller]")]
+    [EnableCors("AllowAll")]
     public class BearsController : Controller
     {
+        private IEnumerable<Bear> _bears => _repo.GetItemsFromCollectionAsync().Result;
+        private IEnumerable<Food> _food => _foodRepo.GetItemsFromCollectionAsync().Result;
+
+        IDbCollectionRepository<Bear> _repo;
+        IDbCollectionRepository<Food> _foodRepo;
+        public BearsController(IDbCollectionRepository<Bear> repo, IDbCollectionRepository<Food> foodRepo)
+        {
+            _repo = repo;
+            _foodRepo = foodRepo;
+        }
+
         [HttpGet]
         public IActionResult Get()
         {
-            return Ok(BearService.Instance.Bears);
+            var bears = _bears;
+            return Ok(bears);
         }
 
         [HttpGet("{name}", Name = "GetBearByName")]
         public IActionResult Get(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return BadRequest();
-            var bear = BearService.Instance.Bears.FirstOrDefault(b => b.Name == name);
+            var bear = _repo.GetItemFromCollectionAsync(name).Result;
             if (bear == null)
             {
                 return NotFound();
@@ -33,42 +48,54 @@ namespace WebApplication1.Controllers
         public IActionResult Post([FromBody] Bear bear)
         {
             if (string.IsNullOrWhiteSpace(bear?.Name)) return BadRequest();
-            if (BearService.Instance.Bears.Any(b => b.Name == bear.Name)) return BadRequest();
-            BearService.Instance.Bears.Add(bear);
-            return CreatedAtRoute("GetBearByName", new{name=bear.Name}, bear);
+            
+            if (_bears.Any(b => b.Name == bear.Name)) return BadRequest();
+            var result = _repo.AddDocumentIntoCollectionAsync(bear).Result;
+            return CreatedAtRoute("GetBearByName", new{name=result.Name}, result);
         }
-        
+
+        [HttpPut("{name}")]
+        public IActionResult Put(string name, [FromBody] Bear bear)
+        {
+            if (string.IsNullOrWhiteSpace(bear?.Name)) return BadRequest();
+            var oldBear =_bears.FirstOrDefault(b => b.Name == name);
+            if (oldBear == null) return BadRequest();
+            var updated = _repo.UpdateDocumentFromCollection(name, bear).Result;
+            return CreatedAtRoute("GetBearByName", new { name = updated.Name }, updated);
+        }
+
         [HttpDelete("{name}")]
         public IActionResult Delete(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return BadRequest();
-            var bear = BearService.Instance.Bears.FirstOrDefault(b => b.Name == name);
+            var bear = _bears.FirstOrDefault(b => b.Name == name);
             if (bear == null)
             {
                 return NotFound();
             }
 
-            BearService.Instance.Bears.Remove(bear);
+            _repo.DeleteDocumentFromCollectionAsync(name);
             return NoContent();
         }
 
-        [HttpPost("eat/{bearName}/{foodName}")]
+        [HttpGet("{bearName}/eat/{foodName}")]
         public IActionResult Eat(string bearName, string foodName)
         {
             if (string.IsNullOrWhiteSpace(bearName) || string.IsNullOrWhiteSpace(foodName)) return BadRequest();
-            var bear = BearService.Instance.Bears.FirstOrDefault(b => b.Name == bearName);
+            var bear = _bears.FirstOrDefault(b => b.Name == bearName);
             if (bear == null) return NotFound();
-            var food = FoodService.Instance.Food.FirstOrDefault(f => f.Name == foodName);
+            var food = _food.FirstOrDefault(f => f.Name == foodName);
             if (food == null) return NotFound();
             bear.Weight += food.KCal;
-            return Ok(bear);
+            var updated = _repo.UpdateDocumentFromCollection(bearName, bear).Result;
+            return Ok(updated);
         }
         
-        [HttpPost("goToToilet/{bearName}")]
-        public IActionResult GoToToilet(string bearName,[FromBody] ToiletOperation operation)
+        [HttpGet("{bearName}/goToToilet/{operation}")]
+        public IActionResult GoToToilet(string bearName, ToiletOperation operation)
         {
             if (string.IsNullOrWhiteSpace(bearName)) return BadRequest();
-            var bear = BearService.Instance.Bears.FirstOrDefault(b => b.Name == bearName);
+            var bear = _bears.FirstOrDefault(b => b.Name == bearName);
             if (bear == null) return NotFound();
             switch (operation)
             {
@@ -84,10 +111,11 @@ namespace WebApplication1.Controllers
 
             if (bear.Weight < 0)
             {
-                BearService.Instance.Bears.Remove(bear);
-                return Ok($"Your bear died with a weight of {bear.Weight}");
+                _repo.DeleteDocumentFromCollectionAsync(bearName);
+                return Ok($"{bear.Name} died with a weight of {bear.Weight}");
             }
-            return Ok(bear);
+            var updated = _repo.UpdateDocumentFromCollection(bearName, bear).Result;
+            return Ok(updated);
         }
     }
 }
