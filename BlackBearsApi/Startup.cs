@@ -26,7 +26,7 @@ namespace BlackBearApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton(typeof(IDbCollectionRepository<Bear, string>), typeof(DbCollectionRepository));
+            services.AddSingleton(typeof(IDbCollectionRepository<Bear>), typeof(DbCollectionRepository<Bear>));
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll",

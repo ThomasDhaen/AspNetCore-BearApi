@@ -16,8 +16,8 @@ namespace BlackBearApi.Controllers
     {
         private IEnumerable<Bear> _bears => _repo.GetItemsFromCollectionAsync().Result;
 
-        IDbCollectionRepository<Bear, string> _repo;
-        public BearsController(IDbCollectionRepository<Bear, string> repo)
+        IDbCollectionRepository<Bear> _repo;
+        public BearsController(IDbCollectionRepository<Bear> repo)
         {
             _repo = repo;
         }

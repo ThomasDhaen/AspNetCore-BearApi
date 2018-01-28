@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 
 namespace BlackBearsApi.Repositories
 {
-    public interface IDbCollectionRepository<TModel, in TParam>
+    public interface IDbCollectionRepository<TModel>
     {
         Task<IEnumerable<TModel>> GetItemsFromCollectionAsync();
-        Task<TModel> GetItemFromCollectionAsync(TParam id);
+        Task<TModel> GetItemFromCollectionAsync(string id);
         Task<TModel> AddDocumentIntoCollectionAsync(TModel item);
-        Task<TModel> UpdateDocumentFromCollection(TParam id, TModel item);
-        Task DeleteDocumentFromCollectionAsync(TParam id);
+        Task<TModel> UpdateDocumentFromCollection(string id, TModel item);
+        Task DeleteDocumentFromCollectionAsync(string id);
     }
 }

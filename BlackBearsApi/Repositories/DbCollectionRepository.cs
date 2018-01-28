@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace BlackBearsApi.Repositories
 {
-    public class DbCollectionRepository : IDbCollectionRepository<Bear, string>
+    public class DbCollectionRepository<TModel> : IDbCollectionRepository<TModel>
     {
 
         private static readonly string Endpoint = "https://YOURDB.documents.azure.com:443/";
@@ -67,14 +67,14 @@ namespace BlackBearsApi.Repositories
             }
         }
 
-        public async Task<Bear> AddDocumentIntoCollectionAsync(Bear item)
+        public async Task<TModel> AddDocumentIntoCollectionAsync(TModel item)
         {
             try
             {
                 var document = await docClient.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId), item);
                 var res = document.Resource;
-                var bear = JsonConvert.DeserializeObject<Bear>(res.ToString());
-                return bear;
+                var json = JsonConvert.DeserializeObject<TModel>(res.ToString());
+                return json;
             }
             catch (Exception ex)
             {
@@ -87,18 +87,18 @@ namespace BlackBearsApi.Repositories
             await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id));
         }
 
-        public async Task<Bear> GetItemFromCollectionAsync(string id)
+        public async Task<TModel> GetItemFromCollectionAsync(string id)
         {
             try
             {
                 Document doc = await docClient.ReadDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id));
-                return JsonConvert.DeserializeObject<Bear>(doc.ToString());
+                return JsonConvert.DeserializeObject<TModel>(doc.ToString());
             }
             catch (DocumentClientException e)
             {
                 if (e.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    return null;
+                    return default(TModel);
                 }
                 else
                 {
@@ -107,28 +107,28 @@ namespace BlackBearsApi.Repositories
             }
         }
 
-        public async Task<IEnumerable<Bear>> GetItemsFromCollectionAsync()
+        public async Task<IEnumerable<TModel>> GetItemsFromCollectionAsync()
         {
-            var bears = docClient.CreateDocumentQuery<Bear>(
+            var items = docClient.CreateDocumentQuery<TModel>(
                   UriFactory.CreateDocumentCollectionUri(DatabaseId, CollectionId),
                   new FeedOptions { MaxItemCount = -1 })
                   .AsDocumentQuery();
-            List<Bear> persons = new List<Bear>();
-            while (bears.HasMoreResults)
+            List<TModel> persons = new List<TModel>();
+            while (items.HasMoreResults)
             {
-                persons.AddRange(await bears.ExecuteNextAsync<Bear>());
+                persons.AddRange(await items.ExecuteNextAsync<TModel>());
             }
             return persons;
         }
 
-        public async Task<Bear> UpdateDocumentFromCollection(string id, Bear item)
+        public async Task<TModel> UpdateDocumentFromCollection(string id, TModel item)
         {
             try
             {
                 var document = await docClient.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id), item);
                 var data = document.Resource.ToString();
-                var person = JsonConvert.DeserializeObject<Bear>(data);
-                return person;
+                var json = JsonConvert.DeserializeObject<TModel>(data);
+                return json;
             }
             catch (Exception ex)
             {
