@@ -4,6 +4,9 @@ namespace BlackBearApi.Model
 {
     public class Food
     {
+        [JsonProperty(PropertyName = "id")]
+        private string Id => Name;
+
         [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
 
