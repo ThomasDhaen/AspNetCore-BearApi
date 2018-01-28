@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using BlackBearApi.Model;
-using BlackBearApi.Services;
 using System.Collections.Generic;
 using BlackBearsApi.Repositories;
 

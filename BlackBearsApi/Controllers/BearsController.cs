@@ -5,7 +5,6 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cors;
 using BlackBearApi.Model;
-using BlackBearApi.Services;
 using BlackBearsApi.Repositories;
 
 namespace BlackBearApi.Controllers
