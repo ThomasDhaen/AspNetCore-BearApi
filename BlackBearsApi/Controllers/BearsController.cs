@@ -78,7 +78,7 @@ namespace BlackBearApi.Controllers
             return NoContent();
         }
 
-        [HttpPost("eat/{bearName}/{foodName}")]
+        [HttpGet("{bearName}/eat/{foodName}")]
         public IActionResult Eat(string bearName, string foodName)
         {
             if (string.IsNullOrWhiteSpace(bearName) || string.IsNullOrWhiteSpace(foodName)) return BadRequest();
@@ -87,11 +87,12 @@ namespace BlackBearApi.Controllers
             var food = _food.FirstOrDefault(f => f.Name == foodName);
             if (food == null) return NotFound();
             bear.Weight += food.KCal;
-            return Ok(bear);
+            var updated = _repo.UpdateDocumentFromCollection(bearName, bear).Result;
+            return Ok(updated);
         }
         
-        [HttpPost("goToToilet/{bearName}")]
-        public IActionResult GoToToilet(string bearName,[FromBody] ToiletOperation operation)
+        [HttpGet("{bearName}/goToToilet/{operation}")]
+        public IActionResult GoToToilet(string bearName, ToiletOperation operation)
         {
             if (string.IsNullOrWhiteSpace(bearName)) return BadRequest();
             var bear = _bears.FirstOrDefault(b => b.Name == bearName);
@@ -111,9 +112,10 @@ namespace BlackBearApi.Controllers
             if (bear.Weight < 0)
             {
                 _repo.DeleteDocumentFromCollectionAsync(bearName);
-                return Ok($"Your bear died with a weight of {bear.Weight}");
+                return Ok($"{bear.Name} died with a weight of {bear.Weight}");
             }
-            return Ok(bear);
+            var updated = _repo.UpdateDocumentFromCollection(bearName, bear).Result;
+            return Ok(updated);
         }
     }
 }

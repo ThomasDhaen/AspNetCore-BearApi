@@ -27,6 +27,7 @@ namespace BlackBearApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton(typeof(IDbCollectionRepository<Bear>), typeof(DbCollectionRepository<Bear>));
+            services.AddSingleton(typeof(IDbCollectionRepository<Food>), typeof(DbCollectionRepository<Food>));
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll",
