@@ -3,25 +3,37 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 using BlackBearApi.Model;
 using BlackBearApi.Services;
+using BlackBearsApi.Repositories;
 
 namespace BlackBearApi.Controllers
 {
     [Route("api/[controller]")]
+    [EnableCors("AllowAll")]
     public class BearsController : Controller
     {
+        private IEnumerable<Bear> _bears => _repo.GetItemsFromCollectionAsync().Result;
+
+        IDbCollectionRepository<Bear, string> _repo;
+        public BearsController(IDbCollectionRepository<Bear, string> repo)
+        {
+            _repo = repo;
+        }
+
         [HttpGet]
         public IActionResult Get()
         {
-            return Ok(BearService.Instance.Bears);
+            var bears = _bears;
+            return Ok(bears);
         }
 
         [HttpGet("{name}", Name = "GetBearByName")]
         public IActionResult Get(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return BadRequest();
-            var bear = BearService.Instance.Bears.FirstOrDefault(b => b.Name == name);
+            var bear = _repo.GetItemFromCollectionAsync(name).Result;
             if (bear == null)
             {
                 return NotFound();
@@ -33,22 +45,23 @@ namespace BlackBearApi.Controllers
         public IActionResult Post([FromBody] Bear bear)
         {
             if (string.IsNullOrWhiteSpace(bear?.Name)) return BadRequest();
-            if (BearService.Instance.Bears.Any(b => b.Name == bear.Name)) return BadRequest();
-            BearService.Instance.Bears.Add(bear);
-            return CreatedAtRoute("GetBearByName", new{name=bear.Name}, bear);
+            
+            if (_bears.Any(b => b.Name == bear.Name)) return BadRequest();
+            var result = _repo.AddDocumentIntoCollectionAsync(bear).Result;
+            return CreatedAtRoute("GetBearByName", new{name=result.Name}, result);
         }
         
         [HttpDelete("{name}")]
         public IActionResult Delete(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return BadRequest();
-            var bear = BearService.Instance.Bears.FirstOrDefault(b => b.Name == name);
+            var bear = _bears.FirstOrDefault(b => b.Name == name);
             if (bear == null)
             {
                 return NotFound();
             }
 
-            BearService.Instance.Bears.Remove(bear);
+            _repo.DeleteDocumentFromCollectionAsync(name);
             return NoContent();
         }
 
