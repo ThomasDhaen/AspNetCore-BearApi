@@ -15,11 +15,14 @@ namespace BlackBearApi.Controllers
     public class BearsController : Controller
     {
         private IEnumerable<Bear> _bears => _repo.GetItemsFromCollectionAsync().Result;
+        private IEnumerable<Food> _food => _foodRepo.GetItemsFromCollectionAsync().Result;
 
         IDbCollectionRepository<Bear> _repo;
-        public BearsController(IDbCollectionRepository<Bear> repo)
+        IDbCollectionRepository<Food> _foodRepo;
+        public BearsController(IDbCollectionRepository<Bear> repo, IDbCollectionRepository<Food> foodRepo)
         {
             _repo = repo;
+            _foodRepo = foodRepo;
         }
 
         [HttpGet]
@@ -79,9 +82,9 @@ namespace BlackBearApi.Controllers
         public IActionResult Eat(string bearName, string foodName)
         {
             if (string.IsNullOrWhiteSpace(bearName) || string.IsNullOrWhiteSpace(foodName)) return BadRequest();
-            var bear = BearService.Instance.Bears.FirstOrDefault(b => b.Name == bearName);
+            var bear = _bears.FirstOrDefault(b => b.Name == bearName);
             if (bear == null) return NotFound();
-            var food = FoodService.Instance.Food.FirstOrDefault(f => f.Name == foodName);
+            var food = _food.FirstOrDefault(f => f.Name == foodName);
             if (food == null) return NotFound();
             bear.Weight += food.KCal;
             return Ok(bear);
@@ -91,7 +94,7 @@ namespace BlackBearApi.Controllers
         public IActionResult GoToToilet(string bearName,[FromBody] ToiletOperation operation)
         {
             if (string.IsNullOrWhiteSpace(bearName)) return BadRequest();
-            var bear = BearService.Instance.Bears.FirstOrDefault(b => b.Name == bearName);
+            var bear = _bears.FirstOrDefault(b => b.Name == bearName);
             if (bear == null) return NotFound();
             switch (operation)
             {
@@ -107,7 +110,7 @@ namespace BlackBearApi.Controllers
 
             if (bear.Weight < 0)
             {
-                BearService.Instance.Bears.Remove(bear);
+                _repo.DeleteDocumentFromCollectionAsync(bearName);
                 return Ok($"Your bear died with a weight of {bear.Weight}");
             }
             return Ok(bear);
