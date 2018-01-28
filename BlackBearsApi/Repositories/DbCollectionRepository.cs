@@ -16,7 +16,7 @@ namespace BlackBearsApi.Repositories
         private static readonly string Endpoint = "https://YOURDB.documents.azure.com:443/";
         private static readonly string Key = "FirstKey";
         private static readonly string DatabaseId = "BlackBearsDB";
-        private static readonly string CollectionId = "BearCollection";
+        private static readonly string CollectionId = $"{typeof(TModel).Name}Collection";
         private static DocumentClient docClient;
 
         public DbCollectionRepository()
