@@ -132,7 +132,6 @@ namespace BlackBearsApi.Repositories
             }
             catch (Exception ex)
             {
-
                 throw ex;
             }
         }
