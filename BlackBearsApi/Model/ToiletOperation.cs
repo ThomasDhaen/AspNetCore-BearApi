@@ -1,4 +1,4 @@
-﻿namespace WebApplication1.Model
+﻿namespace BlackBearApi.Model
 {
     public enum ToiletOperation
     {

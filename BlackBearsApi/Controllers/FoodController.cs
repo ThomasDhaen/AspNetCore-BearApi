@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Model;
-using WebApplication1.Services;
+using BlackBearApi.Model;
+using BlackBearApi.Services;
 
-namespace WebApplication1.Controllers
+namespace BlackBearApi.Controllers
 {
     [Route("api/[controller]")]
     public class FoodController : Controller

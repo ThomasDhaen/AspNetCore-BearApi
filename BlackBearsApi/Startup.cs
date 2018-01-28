@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
 
-namespace WebApplication1
+namespace BlackBearApi
 {
     public class Startup
     {

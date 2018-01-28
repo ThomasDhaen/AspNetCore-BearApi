@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace WebApplication1.Model
+namespace BlackBearApi.Model
 {
     public class Food
     {
