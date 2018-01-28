@@ -51,11 +51,11 @@ namespace BlackBearApi.Controllers
             return CreatedAtRoute("GetBearByName", new{name=result.Name}, result);
         }
 
-        [HttpPut]
+        [HttpPut("{name}")]
         public IActionResult Put(string name, [FromBody] Bear bear)
         {
             if (string.IsNullOrWhiteSpace(bear?.Name)) return BadRequest();
-            var oldBear =_bears.FirstOrDefault(b => b.Name == bear.Name);
+            var oldBear =_bears.FirstOrDefault(b => b.Name == name);
             if (oldBear == null) return BadRequest();
             var updated = _repo.UpdateDocumentFromCollection(name, bear).Result;
             return CreatedAtRoute("GetBearByName", new { name = updated.Name }, updated);

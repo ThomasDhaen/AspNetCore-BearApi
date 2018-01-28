@@ -82,16 +82,16 @@ namespace BlackBearsApi.Repositories
             }
         }
 
-        public async Task DeleteDocumentFromCollectionAsync(string name)
+        public async Task DeleteDocumentFromCollectionAsync(string id)
         {
-            await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, name));
+            await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id));
         }
 
-        public async Task<Bear> GetItemFromCollectionAsync(string name)
+        public async Task<Bear> GetItemFromCollectionAsync(string id)
         {
             try
             {
-                Document doc = await docClient.ReadDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, name));
+                Document doc = await docClient.ReadDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id));
                 return JsonConvert.DeserializeObject<Bear>(doc.ToString());
             }
             catch (DocumentClientException e)
@@ -121,11 +121,11 @@ namespace BlackBearsApi.Repositories
             return persons;
         }
 
-        public async Task<Bear> UpdateDocumentFromCollection(string name, Bear item)
+        public async Task<Bear> UpdateDocumentFromCollection(string id, Bear item)
         {
             try
             {
-                var document = await docClient.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, name), item);
+                var document = await docClient.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, CollectionId, id), item);
                 var data = document.Resource.ToString();
                 var person = JsonConvert.DeserializeObject<Bear>(data);
                 return person;
