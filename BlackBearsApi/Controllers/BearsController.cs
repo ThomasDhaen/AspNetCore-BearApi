@@ -50,7 +50,17 @@ namespace BlackBearApi.Controllers
             var result = _repo.AddDocumentIntoCollectionAsync(bear).Result;
             return CreatedAtRoute("GetBearByName", new{name=result.Name}, result);
         }
-        
+
+        [HttpPut]
+        public IActionResult Put(string name, [FromBody] Bear bear)
+        {
+            if (string.IsNullOrWhiteSpace(bear?.Name)) return BadRequest();
+            var oldBear =_bears.FirstOrDefault(b => b.Name == bear.Name);
+            if (oldBear == null) return BadRequest();
+            var updated = _repo.UpdateDocumentFromCollection(name, bear).Result;
+            return CreatedAtRoute("GetBearByName", new { name = updated.Name }, updated);
+        }
+
         [HttpDelete("{name}")]
         public IActionResult Delete(string name)
         {
