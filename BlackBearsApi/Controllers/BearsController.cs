@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cors;
 using BlackBearApi.Model;
@@ -13,11 +14,8 @@ namespace BlackBearApi.Controllers
     [EnableCors("AllowAll")]
     public class BearsController : Controller
     {
-        private IEnumerable<Bear> _bears => _repo.GetItemsFromCollectionAsync().Result;
-        private IEnumerable<Food> _food => _foodRepo.GetItemsFromCollectionAsync().Result;
-
-        IDbCollectionRepository<Bear> _repo;
-        IDbCollectionRepository<Food> _foodRepo;
+        readonly IDbCollectionRepository<Bear> _repo;
+        readonly IDbCollectionRepository<Food> _foodRepo;
         public BearsController(IDbCollectionRepository<Bear> repo, IDbCollectionRepository<Food> foodRepo)
         {
             _repo = repo;
@@ -25,17 +23,17 @@ namespace BlackBearApi.Controllers
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> Get()
         {
-            var bears = _bears;
+            var bears = await _repo.GetItemsFromCollectionAsync();
             return Ok(bears);
         }
 
         [HttpGet("{name}", Name = "GetBearByName")]
-        public IActionResult Get(string name)
+        public async Task<IActionResult> Get(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return BadRequest();
-            var bear = _repo.GetItemFromCollectionAsync(name).Result;
+            var bear = await _repo.GetItemFromCollectionAsync(name);
             if (bear == null)
             {
                 return NotFound();
@@ -44,57 +42,62 @@ namespace BlackBearApi.Controllers
         }
         
         [HttpPost]
-        public IActionResult Post([FromBody] Bear bear)
+        public async Task<IActionResult> Post([FromBody] Bear bear)
         {
             if (string.IsNullOrWhiteSpace(bear?.Name)) return BadRequest();
-            
-            if (_bears.Any(b => b.Name == bear.Name)) return BadRequest();
-            var result = _repo.AddDocumentIntoCollectionAsync(bear).Result;
+            var bears = await _repo.GetItemsFromCollectionAsync();
+            if (bears.Any(b => b.Name == bear.Name)) return BadRequest();
+            var result = await _repo.AddDocumentIntoCollectionAsync(bear);
             return CreatedAtRoute("GetBearByName", new{name=result.Name}, result);
         }
 
         [HttpPut("{name}")]
-        public IActionResult Put(string name, [FromBody] Bear bear)
+        public async Task<IActionResult> Put(string name, [FromBody] Bear bear)
         {
             if (string.IsNullOrWhiteSpace(bear?.Name)) return BadRequest();
-            var oldBear =_bears.FirstOrDefault(b => b.Name == name);
+            var bears = await _repo.GetItemsFromCollectionAsync();
+            var oldBear = bears.FirstOrDefault(b => b.Name == name);
             if (oldBear == null) return BadRequest();
-            var updated = _repo.UpdateDocumentFromCollection(name, bear).Result;
-            return CreatedAtRoute("GetBearByName", new { name = updated.Name }, updated);
+            var updated = await _repo.UpdateDocumentFromCollection(name, bear);
+            return Ok(updated);
         }
 
         [HttpDelete("{name}")]
-        public IActionResult Delete(string name)
+        public async Task<IActionResult> Delete(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return BadRequest();
-            var bear = _bears.FirstOrDefault(b => b.Name == name);
+            var bears = await _repo.GetItemsFromCollectionAsync();
+            var bear = bears.FirstOrDefault(b => b.Name == name);
             if (bear == null)
             {
                 return NotFound();
             }
 
-            _repo.DeleteDocumentFromCollectionAsync(name);
-            return NoContent();
+            await _repo.DeleteDocumentFromCollectionAsync(name);
+            return Ok();
         }
 
         [HttpGet("{bearName}/eat/{foodName}")]
-        public IActionResult Eat(string bearName, string foodName)
+        public async Task<IActionResult> Eat(string bearName, string foodName)
         {
             if (string.IsNullOrWhiteSpace(bearName) || string.IsNullOrWhiteSpace(foodName)) return BadRequest();
-            var bear = _bears.FirstOrDefault(b => b.Name == bearName);
+            var bears = await _repo.GetItemsFromCollectionAsync();
+            var bear = bears.FirstOrDefault(b => b.Name == bearName);
             if (bear == null) return NotFound();
-            var food = _food.FirstOrDefault(f => f.Name == foodName);
+            var foodList = await _foodRepo.GetItemsFromCollectionAsync();
+            var food = foodList.FirstOrDefault(f => f.Name == foodName);
             if (food == null) return NotFound();
             bear.Weight += food.KCal;
-            var updated = _repo.UpdateDocumentFromCollection(bearName, bear).Result;
+            var updated = await _repo.UpdateDocumentFromCollection(bearName, bear);
             return Ok(updated);
         }
         
         [HttpGet("{bearName}/goToToilet/{operation}")]
-        public IActionResult GoToToilet(string bearName, ToiletOperation operation)
+        public async Task<IActionResult> GoToToilet(string bearName, ToiletOperation operation)
         {
             if (string.IsNullOrWhiteSpace(bearName)) return BadRequest();
-            var bear = _bears.FirstOrDefault(b => b.Name == bearName);
+            var bears = await _repo.GetItemsFromCollectionAsync();
+            var bear = bears.FirstOrDefault(b => b.Name == bearName);
             if (bear == null) return NotFound();
             switch (operation)
             {
@@ -110,10 +113,10 @@ namespace BlackBearApi.Controllers
 
             if (bear.Weight < 0)
             {
-                _repo.DeleteDocumentFromCollectionAsync(bearName);
+                await _repo.DeleteDocumentFromCollectionAsync(bearName);
                 return Ok($"{bear.Name} died with a weight of {bear.Weight}");
             }
-            var updated = _repo.UpdateDocumentFromCollection(bearName, bear).Result;
+            var updated = await _repo.UpdateDocumentFromCollection(bearName, bear);
             return Ok(updated);
         }
     }

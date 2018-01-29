@@ -3,31 +3,31 @@ using Microsoft.AspNetCore.Mvc;
 using BlackBearApi.Model;
 using System.Collections.Generic;
 using BlackBearsApi.Repositories;
+using System.Threading.Tasks;
 
 namespace BlackBearApi.Controllers
 {
     [Route("api/[controller]")]
     public class FoodController : Controller
     {
-        private IEnumerable<Food> _food => _repo.GetItemsFromCollectionAsync().Result;
-
-        IDbCollectionRepository<Food> _repo;
+        readonly IDbCollectionRepository<Food> _repo;
         public FoodController(IDbCollectionRepository<Food> repo)
         {
             _repo = repo;
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> Get()
         {
-            return Ok(_food);
+            var foodList = await _repo.GetItemsFromCollectionAsync();
+            return Ok(foodList);
         }
 
         [HttpGet("{name}", Name = "GetFoodByName")]
-        public IActionResult Get(string name)
+        public async Task<IActionResult> Get(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return BadRequest();
-            var food = _repo.GetItemFromCollectionAsync(name).Result;
+            var food = await _repo.GetItemFromCollectionAsync(name);
             if (food == null)
             {
                 return NotFound();
@@ -36,36 +36,39 @@ namespace BlackBearApi.Controllers
         }
         
         [HttpPost]
-        public IActionResult Post([FromBody] Food food)
+        public async Task<IActionResult> Post([FromBody] Food food)
         {
             if (string.IsNullOrWhiteSpace(food?.Name)) return BadRequest();
-            if (_food.Any(f => f.Name == food.Name)) return BadRequest();
-            var result = _repo.AddDocumentIntoCollectionAsync(food).Result;
+            var foodList = await _repo.GetItemsFromCollectionAsync();
+            if (foodList.Any(f => f.Name == food.Name)) return BadRequest();
+            var result = await _repo.AddDocumentIntoCollectionAsync(food);
             return CreatedAtRoute("GetFoodByName", new{name=result.Name}, result);
         }
 
         [HttpPut("{name}")]
-        public IActionResult Put(string name, [FromBody] Food food)
+        public async Task<IActionResult> Put(string name, [FromBody] Food food)
         {
             if (string.IsNullOrWhiteSpace(food?.Name)) return BadRequest();
-            var oldFood = _food.FirstOrDefault(f => f.Name == food.Name);
+            var foodList = await _repo.GetItemsFromCollectionAsync();
+            var oldFood = foodList.FirstOrDefault(f => f.Name == food.Name);
             if (oldFood == null) return BadRequest();
-            var updated = _repo.UpdateDocumentFromCollection(name, food).Result;
-            return CreatedAtRoute("GetFoodByName", new{name=updated.Name}, updated);
+            var updated = await _repo.UpdateDocumentFromCollection(name, food);
+            return Ok(updated);
         }
         
         [HttpDelete("{name}")]
-        public IActionResult Delete(string name)
+        public async Task<IActionResult> Delete(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return BadRequest();
-            var food = _food.FirstOrDefault(b => b.Name == name);
+            var foodList = await _repo.GetItemsFromCollectionAsync();
+            var food = foodList.FirstOrDefault(b => b.Name == name);
             if (food == null)
             {
                 return NotFound();
             }
 
-            _repo.DeleteDocumentFromCollectionAsync(name);
-            return NoContent();
+            await _repo.DeleteDocumentFromCollectionAsync(name);
+            return Ok();
         }
     }
 }
